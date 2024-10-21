@@ -13,9 +13,9 @@
  - dar a opção de salvar o arquivo base e teste
  
 # camadas
-  -camada de entrada
-  -camada oculta 
-  -media da entrada * da saida/2 >= 2
+  - camada de entrada
+  - camada oculta 
+  - media da entrada * da saida/2 >= 2
 
 # valor do erro
 
