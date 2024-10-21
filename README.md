@@ -18,7 +18,7 @@
   - media da entrada * da saida/2 >= 2
 
 # valor do erro
-
+ 
 # funções
   - linear f(net), f´(net)
   - logistica
@@ -27,7 +27,9 @@
   - media para cada exemplo 1/2 somatorio de erro^2 ao final da epoca calcular a media
   - repetir até a media do erro ser menor q o minimo
 
-# grafico de setores com acerto e erro em %
+# grafico de setores 
+ - erro %
+ - acerto %
 # matriz de confusão
   - acertos diagonal principal
 
