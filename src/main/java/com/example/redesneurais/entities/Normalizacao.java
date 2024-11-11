@@ -1,13 +1,10 @@
 package com.example.redesneurais.entities;
 
-public class Normalization {
+public class Normalizacao {
     private String atributo;
     private double menorValor;
     private double maiorValor;
     private double intervalo;
-
-    public Normalization(String atributo, double v, double v1) {
-    }
 
     public String getAtributo() {
         return atributo;
@@ -41,7 +38,7 @@ public class Normalization {
         this.intervalo = maiorValor - menorValor;
     }
 
-    public void Normalizacao(String atributo, double menorValor, double maiorValor) {
+    public Normalizacao(String atributo, double menorValor, double maiorValor) {
         this.atributo = atributo;
         this.menorValor = menorValor;
         this.maiorValor = maiorValor;

@@ -1,32 +1,33 @@
+
 package com.example.redesneurais.util;
 
-import com.example.redesneurais.entities.Atribute;
-import com.example.redesneurais.entities.CSVline;
-import com.example.redesneurais.entities.Normalization;
+import com.example.redesneurais.entities.Atributo;
+import com.example.redesneurais.entities.LinhaCSV;
+import com.example.redesneurais.entities.Normalizacao;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Arq {
+public class Arquivo {
 
     private BufferedReader csvReader;
     private int outputLayer;
     private int inputLayer;
     private int hiddenLayer;
-    private List<CSVline> linhas;
-    private List<Normalization> normalizacaos;
+    private List<LinhaCSV> linhas;
+    private List<Normalizacao> normalizacaos;
     private List<String> classes;
     private String nome_arquivo;
     private String path;
 
-    public void Arquivo(String path, String nome_arquivo) {
+    public Arquivo(String path, String nome_arquivo) {
 
         this.path = path;
         this.nome_arquivo = nome_arquivo;
         this.outputLayer = this.inputLayer = this.hiddenLayer = 0;
-        this.normalizacaos = new ArrayList<Normalization>();
+        this.normalizacaos = new ArrayList<Normalizacao>();
 
         openArq();
     }
@@ -61,7 +62,7 @@ public class Arq {
         return hiddenLayer;
     }
 
-    public List<CSVline> getLinhas() {
+    public List<LinhaCSV> getLinhas() {
         return linhas;
     }
 
@@ -72,23 +73,23 @@ public class Arq {
     private void normalizar() {
 
         double valorAntigo, novoValor;
-        List<Atribute> listAux;
+        List<Atributo> listAux;
 
-        for (Normalization normalizacao : normalizacaos) {
+        for (int i = 0; i < normalizacaos.size(); i++) {
 
-            normalizacao.setIntervalo();
+            normalizacaos.get(i).setIntervalo();
         }
 
-        for (CSVline linha : linhas) {
+        for (int i = 0; i < linhas.size(); i++) {
 
-            listAux = linha.getAtributos();
+            listAux = linhas.get(i).getAtributos();
 
             for (int j = 0; j < listAux.size(); j++) {
 
                 // novo valor = (valor antigo - menor valor)/ intervalo
                 valorAntigo = listAux.get(j).getValor();
-
-                if (normalizacaos.get(j).getIntervalo() == 0)
+                
+                if(normalizacaos.get(j).getIntervalo() == 0)
                     novoValor = 0;
                 else
                     novoValor = ((valorAntigo - normalizacaos.get(j).getMenorValor()) / normalizacaos.get(j).getIntervalo());
@@ -116,7 +117,7 @@ public class Arq {
         String[][] data = new String[70500][800];
         String[] atributos = new String[790];
         String classe = "";
-        CSVline linha;
+        LinhaCSV linha;
         double valor;
         int j = 0;
         int qtdClasses = 0;
@@ -124,7 +125,7 @@ public class Arq {
         boolean isTeste = false;
         int pos;
         this.classes = new ArrayList();
-        this.linhas = new ArrayList<CSVline>();
+        this.linhas = new ArrayList<LinhaCSV>();
         boolean isminist = false;
         try {
 
@@ -132,8 +133,8 @@ public class Arq {
 
                 atributos = preencheAtributos();
                 isminist = true;
-
-                row = csvReader.readLine();
+                
+                  row = csvReader.readLine();
             } else {
 
                 row = csvReader.readLine();
@@ -142,13 +143,13 @@ public class Arq {
 
             if (!nome_arquivo.contains("teste") && !nome_arquivo.contains("test")) {
 
-                normalizacaos = new ArrayList<>();
+                normalizacaos = new ArrayList();
 
                 for (int i = 0; i < atributos.length; i++) {
 
                     if (atributos[i] != "" && !atributos[i].equals("classe")) {
 
-                        normalizacaos.add(new Normalization(atributos[i],0.0,0.0));
+                        normalizacaos.add(new Normalizacao(atributos[i],0.0,0.0));
                     }
                 }
             } else {
@@ -158,7 +159,7 @@ public class Arq {
             inputLayer = normalizacaos.size();
             /*
             for (int i = 0; i < normalizacaos.size(); i++) {
-
+                
                 System.out.println(normalizacaos.get(i).getAtributo());
             }*/
 
@@ -167,12 +168,12 @@ public class Arq {
                 data[j] = row.split(",");
                 classe = data[j][data[j].length - 1];
 
-                linha = new CSVline(classe);
+                linha = new LinhaCSV(classe);
 
                 for (int i = 0; i < data[j].length; i++) {
 
                     if (i != data[j].length - 1) {
-
+                                               
                         valor = Double.parseDouble(data[j][i]);
                         linha.setAtributo(atributos[i], valor);
 
@@ -187,7 +188,7 @@ public class Arq {
 
                     } else {
 
-                        if (classeAnt.isEmpty()) {
+                        if (classeAnt.equals("")) {
                             qtdClasses++;
                             this.classes.add(data[j][i]);
                             classeAnt = data[j][i];
@@ -213,13 +214,14 @@ public class Arq {
 
             csvReader.close();
 
-        } catch (IOException ignored) {
+        } catch (IOException ex) {
         }
 
         outputLayer = qtdClasses;
         this.hiddenLayer = (inputLayer + outputLayer) / 2;
-
-        normalizar();
+        
+        //if(!isminist)
+            normalizar();
 
     }
 

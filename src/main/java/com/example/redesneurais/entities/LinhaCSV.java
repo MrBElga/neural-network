@@ -4,14 +4,14 @@ package com.example.redesneurais.entities;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CSVline {
-
+public class LinhaCSV {
+  
     private String valorclasse;
-    private List<Atribute> atributes;
+    private List<Atributo> atributos;
 
-    public CSVline(String valorclasse) {
-        this.valorclasse = valorclasse;
-        this.atributes = new ArrayList();
+    public LinhaCSV(String valorclasse) {
+        this.valorclasse = valorclasse; 
+        this.atributos = new ArrayList();
     }
 
     public String getValorclasse() {
@@ -22,24 +22,24 @@ public class CSVline {
         this.valorclasse = valorclasse;
     }
 
-    public List<Atribute> getAtributos() {
-        return atributes;
+    public List<Atributo> getAtributos() {
+        return atributos;
     }
-
+    
     public void setAtributo(String nome, double valor){
-
-        this.atributes.add(new Atribute(nome, valor));
+        
+        this.atributos.add(new Atributo(nome, valor));
     }
 
     public List<Double> retornaValores(){
-
+        
         List<Double> valores = new ArrayList();
-
-        for (int i = 0; i < atributes.size(); i++) {
-
-            valores.add(atributes.get(i).getValor());
+        
+        for (int i = 0; i < atributos.size(); i++) {
+            
+            valores.add(atributos.get(i).getValor());
         }
-
+        
         return valores;
     }
 }

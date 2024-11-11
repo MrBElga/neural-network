@@ -1,11 +1,11 @@
 package com.example.redesneurais.entities;
 
-public class Atribute {
-
+public class Atributo {
+    
     private String nome;
     private double valor;
 
-    public Atribute(String nome, double valor) {
+    public Atributo(String nome, double valor) {
         this.nome = nome;
         this.valor = valor;
     }
