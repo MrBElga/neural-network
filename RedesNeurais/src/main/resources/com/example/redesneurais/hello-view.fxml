@@ -69,7 +69,7 @@
          <Label layoutX="322.0" layoutY="58.0" prefHeight="63.0" prefWidth="131.0" style="-fx-font-size: 18; -fx-text-fill: green;" text="REDES NEURAIS" />
 
          <!-- Botão Carregar Arquivo -->
-         <Button alignment="CENTER" layoutX="40.0" layoutY="327.0" prefWidth="150.0" style="-fx-background-color: lightgray;" text="Carregar Arquivo" />
-      <Label disable="true" layoutX="222.0" layoutY="331.0" text="Label" />
+        <Button alignment="CENTER" layoutX="40.0" layoutY="327.0" prefWidth="150.0" style="-fx-background-color: lightgray;" text="Carregar Arquivo" onAction="#handleCarregarArquivo"/>
+        <Label fx:id="filePathLabel" layoutX="222.0" layoutY="331.0" text="Caminho do Arquivo" />
     </children>
 </AnchorPane>
