@@ -7,4 +7,6 @@ module com.example.redesneurais {
 
     opens com.example.redesneurais to javafx.fxml;
     exports com.example.redesneurais;
+    exports com.example.redesneurais.entities;
+    opens com.example.redesneurais.entities to javafx.fxml;
 }
