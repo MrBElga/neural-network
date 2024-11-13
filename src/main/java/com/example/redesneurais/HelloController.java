@@ -136,6 +136,11 @@ public class HelloController implements Initializable {
 
     @FXML
     private void evtAbrir(ActionEvent event) {
+        if (projeto == null || control.getArq() == null) {
+            showAlert("Nenhum arquivo carregado. Por favor, carregue um arquivo antes de prosseguir.");
+            return;
+        }
+
         if (validaInt(txOculta.getText(), "Camada Oculta") &&
                 validaDouble(txErro.getText(), "Erro") &&
                 validaInt(txIteracoes.getText(), "Número máximo de iterações") &&
