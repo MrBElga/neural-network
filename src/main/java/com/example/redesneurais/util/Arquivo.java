@@ -112,7 +112,7 @@ public class Arquivo {
     }
 
     public void lerArquivo() {
-
+        // Inicialização das variáveis e listas
         String row;
         String[][] data = new String[70500][800];
         String[] atributos = new String[790];
@@ -127,29 +127,24 @@ public class Arquivo {
         this.classes = new ArrayList();
         this.linhas = new ArrayList<LinhaCSV>();
         boolean isminist = false;
+
         try {
-
+            // Verifica se o arquivo é um dataset MNIST e inicializa os atributos
             if (nome_arquivo.contains("mnist")) {
-
                 atributos = preencheAtributos();
                 isminist = true;
-                
-                  row = csvReader.readLine();
+                row = csvReader.readLine(); // Ignora a primeira linha (cabeçalho)
             } else {
-
                 row = csvReader.readLine();
                 atributos = row.split(",");
             }
 
+            // Popula a lista de normalizações, caso não esteja em modo de teste ou MNIST
             if (!nome_arquivo.contains("teste") && !nome_arquivo.contains("test")) {
-
-                normalizacaos = new ArrayList();
-
+                normalizacaos = new ArrayList<>();
                 for (int i = 0; i < atributos.length; i++) {
-
-                    if (atributos[i] != "" && !atributos[i].equals("classe")) {
-
-                        normalizacaos.add(new Normalizacao(atributos[i],0.0,0.0));
+                    if (!atributos[i].isEmpty() && !atributos[i].equals("classe")) {
+                        normalizacaos.add(new Normalizacao(atributos[i], 0.0, 0.0));
                     }
                 }
             } else {
@@ -157,73 +152,55 @@ public class Arquivo {
             }
 
             inputLayer = normalizacaos.size();
-            /*
-            for (int i = 0; i < normalizacaos.size(); i++) {
-                
-                System.out.println(normalizacaos.get(i).getAtributo());
-            }*/
 
+            // Leitura das linhas do arquivo CSV
             while ((row = csvReader.readLine()) != null) {
-
                 data[j] = row.split(",");
                 classe = data[j][data[j].length - 1];
-
                 linha = new LinhaCSV(classe);
 
                 for (int i = 0; i < data[j].length; i++) {
-
                     if (i != data[j].length - 1) {
-                                               
                         valor = Double.parseDouble(data[j][i]);
                         linha.setAtributo(atributos[i], valor);
 
+                        // Atualiza os valores mínimo e máximo para normalização
                         if (!isTeste && !isminist) {
-
-                            if (valor < normalizacaos.get(i).getMenorValor()) {
-                                normalizacaos.get(i).setMenorValor(valor);
-                            } else if (valor > normalizacaos.get(i).getMaiorValor()) {
-                                normalizacaos.get(i).setMaiorValor(valor);
+                            if (i < normalizacaos.size()) { // Verifica se o índice é válido
+                                Normalizacao normalizacao = normalizacaos.get(i);
+                                if (valor < normalizacao.getMenorValor()) {
+                                    normalizacao.setMenorValor(valor);
+                                } else if (valor > normalizacao.getMaiorValor()) {
+                                    normalizacao.setMaiorValor(valor);
+                                }
                             }
                         }
-
                     } else {
-
-                        if (classeAnt.equals("")) {
+                        pos = classes.indexOf(data[j][i]);
+                        if (pos == -1) {
                             qtdClasses++;
-                            this.classes.add(data[j][i]);
-                            classeAnt = data[j][i];
-                        } else {
-
-                            pos = classes.indexOf(data[j][i]);
-
-                            if (pos == -1) {
-
-                                qtdClasses++;
-                                this.classes.add(data[j][i]);
-                            }
+                            classes.add(data[j][i]);
                         }
-
                     }
-
                 }
-
                 linhas.add(linha);
-
                 j++;
             }
-
             csvReader.close();
 
+            outputLayer = qtdClasses;
+            this.hiddenLayer = (inputLayer + outputLayer) / 2;
+
+            // Chama a normalização se houver atributos para normalizar
+            if (!normalizacaos.isEmpty()) {
+                normalizar();
+            }
+
         } catch (IOException ex) {
+            ex.printStackTrace();
         }
-
-        outputLayer = qtdClasses;
-        this.hiddenLayer = (inputLayer + outputLayer) / 2;
-        
-        //if(!isminist)
-            normalizar();
-
     }
+
 
     public void setNome_arquivo(String nome_arquivo) {
         this.nome_arquivo = nome_arquivo;
