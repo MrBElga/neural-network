@@ -22,6 +22,7 @@ import java.util.ResourceBundle;
 
 public class HelloController implements Initializable {
 
+    public Button btTreino;
     @FXML
     private TextField txEntrada;
     @FXML
@@ -60,6 +61,7 @@ public class HelloController implements Initializable {
     private void valoresIniciais() {
         txEntrada.setText("0");
         txSaida.setText("0");
+        txCaminho.setText("nenhum arquivo");
         txOculta.setText("0");
         txAprendizado.setText("0.1");
         txErro.setText("0.01");

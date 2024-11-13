@@ -16,6 +16,8 @@
             <padding>
                 <Insets bottom="20.0" top="20.0" />
             </padding>
+
+
             <Label text="Configurar Número de Neurônios" GridPane.columnIndex="0" GridPane.rowIndex="2" />
             <Label text="Função de Transferência:" GridPane.columnIndex="6" GridPane.rowIndex="2" />
             <Label text="Camada de Entrada:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
@@ -54,7 +56,8 @@
         </GridPane>
         <Label layoutX="250.0" layoutY="14.0" prefHeight="56.0" prefWidth="301.0" style="-fx-font-size: 24;" text="INTELIGÊNCIA ARTIFICIAL" />
         <Label layoutX="322.0" layoutY="58.0" prefHeight="63.0" prefWidth="131.0" style="-fx-font-size: 18; -fx-text-fill: green;" text="REDES NEURAIS" />
-        <Button alignment="CENTER" layoutX="40.0" layoutY="327.0" prefWidth="150.0" style="-fx-background-color: lightgray;" text="Carregar Arquivo" onAction="#handleCarregarArquivo"/>
-        <Label fx:id="filePathLabel" layoutX="222.0" layoutY="331.0" text="Caminho do Arquivo" />
+        <Button alignment="CENTER" layoutX="40.0" layoutY="327.0" onAction="#handleCarregarArquivo" prefWidth="150.0" style="-fx-background-color: lightgray;" text="Carregar Arquivo" />
+        <TextField fx:id="txCaminho" layoutX="221.0" layoutY="327.0" maxWidth="376.0" prefHeight="25.0" prefWidth="376.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+      <Button fx:id="btTreino" alignment="CENTER" layoutX="613.0" layoutY="327.0"  prefWidth="150.0" style="-fx-background-color: lightgray;" text="treinar" />
     </children>
 </AnchorPane>
