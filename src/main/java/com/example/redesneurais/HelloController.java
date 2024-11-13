@@ -1,6 +1,12 @@
 package com.example.redesneurais;
 
 import com.example.redesneurais.entities.Atributo;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
+import javafx.util.Duration;
 import com.example.redesneurais.util.Controladora;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -166,32 +172,43 @@ public class HelloController implements Initializable {
         List<Double> erros = control.getListaErros();
         double tamanho = erros.remove(erros.size() - 1);
         int tamEpoca = (int) (erros.size() / tamanho);
-        final NumberAxis xAxis = new NumberAxis();
+        final CategoryAxis xAxis = new CategoryAxis();
         final NumberAxis yAxis = new NumberAxis();
         xAxis.setLabel("Épocas");
         yAxis.setLabel("Erro");
 
-        LineChart<Number, Number> grafico = new LineChart<>(xAxis, yAxis);
-        XYChart.Series<Number, Number> series = new XYChart.Series<>();
-
-        for (int i = 0; i < tamanho - 1; i++) {
-            double media = 0;
-            for (int j = i * tamEpoca; j < (i + 1) * tamEpoca; j++) {
-                media += erros.get(j);
-            }
-            media /= tamEpoca;
-            series.getData().add(new XYChart.Data<>(i, media));
-        }
-
+        BarChart<String, Number> grafico = new BarChart<>(xAxis, yAxis);
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
         grafico.getData().add(series);
 
         ScrollPane root = new ScrollPane(grafico);
         root.setMinSize(1300, 800);
         grafico.setMinSize(root.getMinWidth(), root.getMinHeight() - 20);
 
+        // Configuração da janela para exibir o gráfico
         Stage stage = new Stage();
         stage.setScene(new Scene(root, 1215, 768));
         stage.show();
+
+        // Animação para adicionar barras gradualmente ao gráfico
+        Timeline timeline = new Timeline();
+        timeline.setCycleCount((int) tamanho - 1);
+        timeline.setAutoReverse(false);
+
+        for (int i = 0; i < tamanho - 1; i++) {
+            final int epochIndex = i; // Necessário para uso na animação
+            KeyFrame keyFrame = new KeyFrame(Duration.millis(i * 100), e -> {
+                double media = 0;
+                for (int j = epochIndex * tamEpoca; j < (epochIndex + 1) * tamEpoca; j++) {
+                    media += erros.get(j);
+                }
+                media /= tamEpoca;
+                series.getData().add(new XYChart.Data<>(String.valueOf(epochIndex), media));
+            });
+            timeline.getKeyFrames().add(keyFrame);
+        }
+
+        timeline.play();
     }
 
 
