@@ -41,6 +41,8 @@ public class HelloController implements Initializable {
     private RadioButton chLogistica;
     @FXML
     private RadioButton txHiperbolica;
+    @FXML
+    private RadioButton cbTeste;
 
     private File projeto = null;
     private Controladora control;
@@ -48,8 +50,7 @@ public class HelloController implements Initializable {
     private TextField txCaminho;
     @FXML
     private AnchorPane anchorPainel;
-    @FXML
-    private CheckBox cbTeste;
+
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -86,6 +87,7 @@ public class HelloController implements Initializable {
             txCaminho.setText("Nenhum arquivo selecionado");
         }
     }
+
     @FXML
     private void handleCarregarArquivo(ActionEvent event) {
         // Implement file selection logic
@@ -98,6 +100,7 @@ public class HelloController implements Initializable {
             txCaminho.setText("Nenhum arquivo selecionado");
         }
     }
+
     private boolean validaDouble(String valor, String campo) {
         try {
             double parsedValue = Double.parseDouble(valor);
@@ -163,7 +166,6 @@ public class HelloController implements Initializable {
         xAxis.setLabel("Épocas");
         yAxis.setLabel("Erro");
 
-        // Creating the LineChart
         LineChart<Number, Number> grafico = new LineChart<>(xAxis, yAxis);
         XYChart.Series<Number, Number> series = new XYChart.Series<>();
 
@@ -178,12 +180,10 @@ public class HelloController implements Initializable {
 
         grafico.getData().add(series);
 
-        // Wrapping the LineChart in a ScrollPane
         ScrollPane root = new ScrollPane(grafico);
-        root.setMinSize(1300, 800);  // Set preferred size for the ScrollPane
+        root.setMinSize(1300, 800);
         grafico.setMinSize(root.getMinWidth(), root.getMinHeight() - 20);
 
-        // Displaying the chart in a new Stage
         Stage stage = new Stage();
         stage.setScene(new Scene(root, 1215, 768));
         stage.show();
