@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLP Neural Network</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Treinamento de Rede Neural MLP</h1>
+    <form id="uploadForm">
+        <label>Arquivo de Treinamento:</label>
+        <input type="file" id="trainFile" accept=".csv" required><br><br>
+
+        <label>Arquivo de Teste:</label>
+        <input type="file" id="testFile" accept=".csv" required><br><br>
+
+        <label>Taxa de Aprendizado:</label>
+        <input type="number" id="learningRate" step="0.01" value="0.1"><br><br>
+
+        <label>Número de Épocas:</label>
+        <input type="number" id="epochs" value="100"><br><br>
+
+        <label>Função de Ativação:</label>
+        <select id="activation">
+            <option value="linear">Linear</option>
+            <option value="logistic">Logística</option>
+            <option value="tanh">Tangente Hiperbólica</option>
+        </select><br><br>
+
+        <label>Número de Neurônios na Camada Oculta:</label>
+        <input type="number" id="hiddenLayerSize" value="4"><br><br>
+
+        <button type="submit">Treinar</button>
+    </form>
+
+    <div id="progress">Aguardando envio...</div>
+
+    <h2>Resultados</h2>
+    <div id="results"></div>
+    <canvas id="errorChart" width="400" height="200"></canvas>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            document.getElementById('progress').textContent = 'Processando...';
+
+            const formData = new FormData();
+            formData.append('trainFile', document.getElementById('trainFile').files[0]);
+            formData.append('testFile', document.getElementById('testFile').files[0]);
+            formData.append('learningRate', document.getElementById('learningRate').value.replace(',', '.')); // Corrigir vírgula
+            formData.append('epochs', document.getElementById('epochs').value);
+            formData.append('activation', document.getElementById('activation').value);
+            formData.append('hiddenLayerSize', document.getElementById('hiddenLayerSize').value);
+
+            try {
+                const response = await fetch('/train', { method: 'POST', body: formData });
+                if (!response.ok) {
+                    const errorResponse = await response.json();
+                    throw new Error(errorResponse.error || 'Erro desconhecido no servidor');
+                }
+
+                const result = await response.json();
+                document.getElementById('progress').textContent = 'Treinamento concluído!';
+                renderResults(result);
+            } catch (error) {
+                document.getElementById('progress').textContent = `Erro durante o processamento: ${error.message}`;
+                console.error('Erro:', error);
+            }
+        });
+
+        function renderResults(result) {
+            if (!result || !result.confusionMatrix || !result.errorByEpoch) {
+                document.getElementById('results').innerHTML = '<p>Erro: Os resultados estão incompletos ou ausentes.</p>';
+                return;
+            }
+
+            const resultsDiv = document.getElementById('results');
+            let html = '<h3>Matriz de Confusão</h3><table border="1"><tr><th>Classe</th>';
+            const classes = Object.keys(result.confusionMatrix);
+            html += classes.map(cls => `<th>${cls}</th>`).join('');
+            html += '</tr>';
+            for (const actualClass in result.confusionMatrix) {
+                html += `<tr><td>${actualClass}</td>`;
+                html += classes.map(predictedClass => `<td>${result.confusionMatrix[actualClass][predictedClass] || 0}</td>`).join('');
+                html += '</tr>';
+            }
+            html += '</table>';
+
+            resultsDiv.innerHTML = html;
+
+            const ctx = document.getElementById('errorChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: result.errorByEpoch.length }, (_, i) => i + 1),
+                    datasets: [{
+                        label: 'Erro por Época',
+                        data: result.errorByEpoch,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: { enabled: true }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Épocas' } },
+                        y: { title: { display: true, text: 'Erro Total' } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
