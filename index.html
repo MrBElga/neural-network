@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MLP Neural Network</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Treinamento de Rede Neural MLP</h1>
@@ -70,6 +71,8 @@
             }
         });
 
+        let chartInstance = null;
+
         function renderResults(result) {
             if (!result || !result.confusionMatrix || !result.errorByEpoch) {
                 document.getElementById('results').innerHTML = '<p>Erro: Os resultados estão incompletos ou ausentes.</p>';
@@ -94,7 +97,14 @@
             resultsDiv.innerHTML = html;
 
             const ctx = document.getElementById('errorChart').getContext('2d');
-            new Chart(ctx, {
+
+            // Destruir o gráfico anterior, se existir
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            // Criar um novo gráfico
+            chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: Array.from({ length: result.errorByEpoch.length }, (_, i) => i + 1),
@@ -119,6 +129,7 @@
                 }
             });
         }
+
     </script>
 </body>
 </html>
