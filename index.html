@@ -1,116 +1,131 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MLP Neural Network</title>
+    <title>Rede Neural MLP</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Treinamento de Rede Neural MLP</h1>
-    <form id="uploadForm">
-        <label>Arquivo de Treinamento:</label>
-        <input type="file" id="trainFile" accept=".csv" required><br><br>
+    <h1>Treinamento da Rede Neural MLP</h1>
+    <div style="display: flex; align-items: flex-start;">
+        <form id="formEnvio">
+            <label>Arquivo de Treinamento:</label>
+            <input type="file" id="arquivoTreinamento" accept=".csv" required><br><br>
 
-        <label>Arquivo de Teste:</label>
-        <input type="file" id="testFile" accept=".csv" required><br><br>
+            <label>Arquivo de Teste:</label>
+            <input type="file" id="arquivoTeste" accept=".csv" required><br><br>
 
-        <label>Taxa de Aprendizado:</label>
-        <input type="number" id="learningRate" step="0.01" value="0.01"><br><br>
+            <label>Taxa de Aprendizado:</label>
+            <input type="number" id="taxaAprendizado" step="0.01" value="0.01"><br><br>
 
-        <label>Número de Épocas:</label>
-        <input type="number" id="epochs" value="100"><br><br>
+            <label>Número de Épocas:</label>
+            <input type="number" id="epocas" value="200" step="5"><br><br>
 
-        <label>Função de Ativação:</label>
-        <select id="activation">
-            <option value="linear">Linear</option>
-            <option value="logistic">Logística</option>
-            <option value="tanh">Tangente Hiperbólica</option>
-        </select><br><br>
+            <label>Função de Ativação:</label>
+            <select id="funcaoAtivacao">
+                <option value="linear">Linear</option>
+                <option value="logistica">Logística</option>
+                <option value="tangenteHiperbolica">Tangente Hiperbólica</option>
+            </select><br><br>
 
-        <label>Erro Mínimo (opcional):</label>
-        <input type="number" id="minError" step="0.000001" value="0.000001"><br><br>
+            <label>Erro Mínimo (opcional):</label>
+            <input type="number" id="erroMinimo" step="0.000001" value="0.000001"><br><br>
 
-        <button type="submit">Treinar</button>
-    </form>
+            <label>Camada Oculta:</label>
+            <input type="number" id="camadaOculta" value="5" min="0" required><br><br>
 
-    <div id="progress">Aguardando envio...</div>
+            <button type="submit">Treinar</button>
+        </form>
+
+        <div id="informacoesCamadas" style="margin-left: 20px; border: 2px solid #e94560; padding: 10px; width: 200px; display: none;">
+            <h3>Neurônios</h3>
+            <p id="camadaEntrada">Entrada: </p>
+            <p id="camadaSaida">Saída: </p>
+        </div>
+    </div>
+
+    <div id="progresso">Aguardando envio...</div>
 
     <h2>Resultados</h2>
-    <div id="results"></div>
-    <canvas id="errorChart" width="400" height="200"></canvas>
+    <div id="resultados"></div>
+    <canvas id="graficoErro" width="400" height="200"></canvas>
 
     <script>
-        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        document.getElementById('formEnvio').addEventListener('submit', async (evento) => {
+            evento.preventDefault();
 
-            document.getElementById('progress').textContent = 'Processando...';
+            document.getElementById('progresso').textContent = 'Processando...';
 
-            const formData = new FormData();
-            formData.append('trainFile', document.getElementById('trainFile').files[0]);
-            formData.append('testFile', document.getElementById('testFile').files[0]);
-            formData.append('learningRate', document.getElementById('learningRate').value.replace(',', '.'));
-            formData.append('epochs', document.getElementById('epochs').value);
-            formData.append('activation', document.getElementById('activation').value);
-            formData.append('minError', document.getElementById('minError').value || '0.01');
+            const dadosFormulario = new FormData();
+            dadosFormulario.append('arquivoTreinamento', document.getElementById('arquivoTreinamento').files[0]);
+            dadosFormulario.append('arquivoTeste', document.getElementById('arquivoTeste').files[0]);
+            dadosFormulario.append('taxaAprendizado', document.getElementById('taxaAprendizado').value.replace(',', '.'));
+            dadosFormulario.append('epocas', document.getElementById('epocas').value);
+            dadosFormulario.append('funcaoAtivacao', document.getElementById('funcaoAtivacao').value);
+            dadosFormulario.append('erroMinimo', document.getElementById('erroMinimo').value || '0.01');
+            dadosFormulario.append('camadaOculta', document.getElementById('camadaOculta').value);
 
             try {
-                const response = await fetch('/train', { method: 'POST', body: formData });
-                if (!response.ok) {
-                    const errorResponse = await response.json();
-                    throw new Error(errorResponse.error || 'Erro desconhecido no servidor');
+                const resposta = await fetch('/treinar', { method: 'POST', body: dadosFormulario });
+                if (!resposta.ok) {
+                    const erroResposta = await resposta.json();
+                    throw new Error(erroResposta.erro || 'Erro desconhecido no servidor');
                 }
 
-                const result = await response.json();
-                document.getElementById('progress').textContent = 'Treinamento concluído!';
-                renderResults(result);
-            } catch (error) {
-                document.getElementById('progress').textContent = `Erro durante o processamento: ${error.message}`;
-                console.error('Erro:', error);
+                const resultado = await resposta.json();
+
+                // Exibir informações das camadas
+                document.getElementById('camadaEntrada').textContent = `Entrada: ${resultado.numEntradas}`;
+                document.getElementById('camadaSaida').textContent = `Saída: ${resultado.numSaidas}`;
+                document.getElementById('informacoesCamadas').style.display = 'block';
+
+                document.getElementById('progresso').textContent = 'Treinamento concluído!';
+                renderizarResultados(resultado);
+            } catch (erro) {
+                document.getElementById('progresso').textContent = `Erro durante o processamento: ${erro.message}`;
+                console.error('Erro:', erro);
             }
         });
 
-        let chartInstance = null;
+        let instanciaGrafico = null;
 
-        function renderResults(result) {
-            if (!result || !result.confusionMatrix || !result.errorByEpoch) {
-                document.getElementById('results').innerHTML = '<p>Erro: Os resultados estão incompletos ou ausentes.</p>';
+        function renderizarResultados(resultado) {
+            if (!resultado || !resultado.matrizConfusao || !resultado.errosPorEpoca) {
+                document.getElementById('resultados').innerHTML = '<p>Erro: Os resultados estão incompletos ou ausentes.</p>';
                 return;
             }
 
-            const resultsDiv = document.getElementById('results');
+            const divResultados = document.getElementById('resultados');
             let html = `<h3>Matriz de Confusão</h3><table border="1"><tr><th>Classe</th>`;
-            const classes = Object.keys(result.confusionMatrix);
+            const classes = Object.keys(resultado.matrizConfusao);
             html += classes.map(cls => `<th>${cls}</th>`).join('');
             html += '</tr>';
-            for (const actualClass in result.confusionMatrix) {
-                html += `<tr><td>${actualClass}</td>`;
-                html += classes.map(predictedClass => `<td>${result.confusionMatrix[actualClass][predictedClass] || 0}</td>`).join('');
+            for (const classeReal in resultado.matrizConfusao) {
+                html += `<tr><td>${classeReal}</td>`;
+                html += classes.map(classePrevista => `<td>${resultado.matrizConfusao[classeReal][classePrevista] || 0}</td>`).join('');
                 html += '</tr>';
             }
             html += '</table>';
 
-            // Adicionar Acurácia
-            html += `<h3>Acurácia</h3><p>${result.accuracy}%</p>`;
+            html += `<h3>Acurácia</h3><p>${resultado.acuracia}%</p>`;
 
-            resultsDiv.innerHTML = html;
+            divResultados.innerHTML = html;
 
-            const ctx = document.getElementById('errorChart').getContext('2d');
+            const contexto = document.getElementById('graficoErro').getContext('2d');
 
-            // Destruir o gráfico anterior, se existir
-            if (chartInstance) {
-                chartInstance.destroy();
+            if (instanciaGrafico) {
+                instanciaGrafico.destroy();
             }
 
-            // Criar um novo gráfico
-            chartInstance = new Chart(ctx, {
+            instanciaGrafico = new Chart(contexto, {
                 type: 'line',
                 data: {
-                    labels: Array.from({ length: result.errorByEpoch.length }, (_, i) => i + 1),
+                    labels: Array.from({ length: resultado.errosPorEpoca.length }, (_, i) => i + 1),
                     datasets: [{
                         label: 'Erro por Época',
-                        data: result.errorByEpoch,
+                        data: resultado.errosPorEpoca,
                         borderColor: 'rgba(75, 192, 192, 1)',
                         borderWidth: 2,
                         fill: false
@@ -129,7 +144,6 @@
                 }
             });
         }
-
     </script>
 </body>
 </html>

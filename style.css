@@ -1,4 +1,4 @@
-/* styles.css */
+/* estilos.css */
 body {
     font-family: 'Roboto', Arial, sans-serif;
     background-color: #1a1a2e;
@@ -70,16 +70,30 @@ form button:hover {
     box-shadow: 0 4px 10px rgba(233, 69, 96, 0.3);
 }
 
-#progress {
+#progresso {
     margin-top: 15px;
     font-style: italic;
     color: #c7c7c7;
 }
 
-#results {
+#resultados {
     margin-top: 30px;
     text-align: center;
     width: 100%;
+}
+
+#informacoesCamadas {
+    background-color: #1f1f3b;
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    text-align: left;
+}
+
+#informacoesCamadas h3 {
+    margin-top: 0;
+    color: #e94560;
 }
 
 table {
@@ -101,4 +115,3 @@ canvas {
     margin-top: 30px;
     max-width: 100%;
 }
-
