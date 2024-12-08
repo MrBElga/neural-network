@@ -10,219 +10,201 @@ const upload = multer({ dest: 'uploads/' });
 app.use(express.static(path.join(__dirname)));
 
 // Função para ajustar os pesos
-function adjustWeights(weights, bias, input, error, learningRate) {
-    for (let j = 0; j < weights[0].length; j++) {
-        for (let i = 0; i < weights.length; i++) {
-            weights[i][j] += learningRate * error[j] * input[i];
+function ajustarPesos(pesos, bias, entrada, erro, taxaAprendizado) {
+    for (let j = 0; j < pesos[0].length; j++) {
+        for (let i = 0; i < pesos.length; i++) {
+            pesos[i][j] += taxaAprendizado * erro[j] * entrada[i];
         }
-        bias[j] += learningRate * error[j];
+        bias[j] += taxaAprendizado * erro[j];
     }
 }
 
 // Função para calcular o erro da camada oculta
-function calculateHiddenError(outputError, weightsHiddenOutput, hiddenLayer, activationFunc) {
-    return hiddenLayer.map((_, hiddenIdx) => {
-        const errorSum = outputError.reduce((sum, err, outputIdx) => {
-            return sum + err * weightsHiddenOutput[hiddenIdx][outputIdx];
+function calcularErroOculto(erroSaida, pesosOcultoSaida, camadaOculta, funcaoAtivacao) {
+    return camadaOculta.map((_, indiceOculta) => {
+        const somaErro = erroSaida.reduce((soma, erro, indiceSaida) => {
+            return soma + erro * pesosOcultoSaida[indiceOculta][indiceSaida];
         }, 0);
-        return errorSum * activationFunc.derivative(hiddenLayer[hiddenIdx]);
+        return somaErro * funcaoAtivacao.derivada(camadaOculta[indiceOculta]);
     });
 }
 
 // Função para ativar uma camada da rede neural
-function activateLayer(input, weights, bias, activationFunc) {
-    return weights[0].map((_, col) =>
-        activationFunc.func(
-            input.reduce((sum, val, row) => sum + val * weights[row][col], bias[col])
+function ativarCamada(entrada, pesos, bias, funcaoAtivacao) {
+    return pesos[0].map((_, coluna) =>
+        funcaoAtivacao.func(
+            entrada.reduce((soma, valor, linha) => soma + valor * pesos[linha][coluna], bias[coluna])
         )
     );
 }
 
 // Função para validar o modelo (calcular matriz de confusão)
-function validateModel(testData, weightsInputHidden, weightsHiddenOutput, biasHidden, biasOutput, uniqueClasses, activationFunc) {
-    const inputs = testData.map(row => Object.values(row).slice(0, -1).map(Number));
-    const actualClasses = testData.map(row => row.classe);
+function validarModelo(dadosTeste, pesosEntradaOculta, pesosOcultaSaida, biasOculta, biasSaida, classesUnicas, funcaoAtivacao) {
+    const entradas = dadosTeste.map(linha => Object.values(linha).slice(0, -1).map(Number));
+    const classesReais = dadosTeste.map(linha => linha.classe);
 
-    const confusionMatrix = {};
-    uniqueClasses.forEach(cls => {
-        confusionMatrix[cls] = uniqueClasses.reduce((acc, c) => {
-            acc[c] = 0; // Inicializa contagem com 0
+    const matrizConfusao = {};
+    classesUnicas.forEach(classe => {
+        matrizConfusao[classe] = classesUnicas.reduce((acc, cls) => {
+            acc[cls] = 0;
             return acc;
         }, {});
     });
 
-    inputs.forEach((input, idx) => {
-        const hiddenLayer = activateLayer(input, weightsInputHidden, biasHidden, activationFunc);
-        const outputLayer = activateLayer(hiddenLayer, weightsHiddenOutput, biasOutput, activationFunc);
+    entradas.forEach((entrada, indice) => {
+        const camadaOculta = ativarCamada(entrada, pesosEntradaOculta, biasOculta, funcaoAtivacao);
+        const camadaSaida = ativarCamada(camadaOculta, pesosOcultaSaida, biasSaida, funcaoAtivacao);
 
-        const predictedClass = uniqueClasses[outputLayer.indexOf(Math.max(...outputLayer))];
-        const actualClass = actualClasses[idx];
+        const classePrevista = classesUnicas[camadaSaida.indexOf(Math.max(...camadaSaida))];
+        const classeReal = classesReais[indice];
 
-        confusionMatrix[actualClass][predictedClass]++;
+        matrizConfusao[classeReal][classePrevista]++;
     });
 
-    return confusionMatrix;
+    return matrizConfusao;
 }
 
 // Função para calcular a precisão com base na matriz de confusão
-function calculateAccuracy(confusionMatrix) {
-    const total = Object.values(confusionMatrix).reduce(
-        (sum, row) => sum + Object.values(row).reduce((subSum, value) => subSum + value, 0),
+function calcularAcuracia(matrizConfusao) {
+    const total = Object.values(matrizConfusao).reduce(
+        (soma, linha) => soma + Object.values(linha).reduce((subSoma, valor) => subSoma + valor, 0),
         0
     );
-    const correct = Object.keys(confusionMatrix).reduce(
-        (sum, key) => sum + confusionMatrix[key][key],
+    const corretos = Object.keys(matrizConfusao).reduce(
+        (soma, chave) => soma + matrizConfusao[chave][chave],
         0
     );
-    return ((correct / total) * 100).toFixed(2);
+    return ((corretos / total) * 100).toFixed(2);
 }
 
 // Outras funções auxiliares
-function parseCSV(filePath) {
-    return new Promise((resolve, reject) => {
-        const data = [];
-        fs.createReadStream(filePath)
+function parsearCSV(caminhoArquivo) {
+    return new Promise((resolver, rejeitar) => {
+        const dados = [];
+        fs.createReadStream(caminhoArquivo)
             .pipe(csv())
-            .on('data', (row) => data.push(row))
-            .on('end', () => resolve(data))
-            .on('error', (err) => reject(err));
+            .on('data', (linha) => dados.push(linha))
+            .on('end', () => resolver(dados))
+            .on('error', (erro) => rejeitar(erro));
     });
 }
 
-function normalizeData(data) {
-    const columns = Object.keys(data[0]).slice(0, -1);
-    const stats = columns.map(col => ({
-        min: Math.min(...data.map(row => parseFloat(row[col]))),
-        max: Math.max(...data.map(row => parseFloat(row[col]))),
+function normalizarDados(dados) {
+    const colunas = Object.keys(dados[0]).slice(0, -1);
+    const estatisticas = colunas.map(coluna => ({
+        minimo: Math.min(...dados.map(linha => parseFloat(linha[coluna]))),
+        maximo: Math.max(...dados.map(linha => parseFloat(linha[coluna]))),
     }));
 
-    return data.map(row => {
-        const normalizedRow = {};
-        columns.forEach((col, idx) => {
-            const range = stats[idx].max - stats[idx].min || 1;
-            normalizedRow[col] = (parseFloat(row[col]) - stats[idx].min) / range;
+    return dados.map(linha => {
+        const linhaNormalizada = {};
+        colunas.forEach((coluna, indice) => {
+            const alcance = estatisticas[indice].maximo - estatisticas[indice].minimo || 1;
+            linhaNormalizada[coluna] = (parseFloat(linha[coluna]) - estatisticas[indice].minimo) / alcance;
         });
-        normalizedRow.classe = row.classe;
-        return normalizedRow;
+        linhaNormalizada.classe = linha.classe;
+        return linhaNormalizada;
     });
 }
 
-function initializeMatrix(rows, cols) {
-    return Array.from({ length: rows }, () =>
-        Array.from({ length: cols }, () => Math.random() * 0.1 - 0.05)
+function inicializarMatriz(linhas, colunas) {
+    return Array.from({ length: linhas }, () =>
+        Array.from({ length: colunas }, () => Math.random() * 0.1 - 0.05)
     );
 }
 
-function getActivationFunction(type) {
-    if (type === 'linear') {
+function obterFuncaoAtivacao(tipo) {
+    if (tipo === 'linear') {
         return {
             func: x => x / 10,
-            derivative: () => 1 / 10,
+            derivada: () => 1 / 10,
         };
-    } else if (type === 'logistic') {
+    } else if (tipo === 'logistica') {
         return {
             func: x => 1 / (1 + Math.exp(-x)),
-            derivative: y => y * (1 - y),
+            derivada: y => y * (1 - y),
         };
-    } else if (type === 'tanh') {
+    } else if (tipo === 'tangenteHiperbolica') {
         return {
             func: x => Math.tanh(x),
-            derivative: y => 1 - Math.pow(y, 2),
+            derivada: y => 1 - Math.pow(y, 2),
         };
     }
     throw new Error('Função de ativação inválida');
 }
 
-function calculateHiddenNeurons(inputSize, outputSize, method = 'arithmetic') {
-    if (method === 'arithmetic') {
-        return Math.ceil((inputSize + outputSize) / 2);
-    } else if (method === 'geometric') {
-        return Math.ceil(Math.sqrt(inputSize * outputSize));
-    }
-    throw new Error('Método inválido para cálculo de neurônios ocultos');
-}
-
-function trainAndTestModel(trainData, testData, params) {
-    const {
-        numInputs, numOutputs, hiddenLayerSize, learningRate, epochs, activation, minError,
-    } = params;
-
-    const inputs = trainData.map(row => Object.values(row).slice(0, -1).map(Number));
-    const outputs = trainData.map(row => row.classe);
-    const uniqueClasses = [...new Set(outputs)];
-
-    const weightsInputHidden = initializeMatrix(numInputs, hiddenLayerSize);
-    const weightsHiddenOutput = initializeMatrix(hiddenLayerSize, numOutputs);
-    const biasHidden = new Array(hiddenLayerSize).fill(0);
-    const biasOutput = new Array(numOutputs).fill(0);
-
-    const activationFunc = getActivationFunction(activation);
-    const errorByEpoch = [];
-
-    for (let epoch = 0; epoch < epochs; epoch++) {
-        let totalError = 0;
-
-        for (let i = 0; i < inputs.length; i++) {
-            const input = inputs[i];
-            const target = uniqueClasses.map(cls => (cls === outputs[i] ? 1 : 0));
-
-            const hiddenLayer = activateLayer(input, weightsInputHidden, biasHidden, activationFunc);
-            const outputLayer = activateLayer(hiddenLayer, weightsHiddenOutput, biasOutput, activationFunc);
-
-            const outputError = target.map((t, idx) => t - outputLayer[idx]);
-            const hiddenError = calculateHiddenError(outputError, weightsHiddenOutput, hiddenLayer, activationFunc);
-
-            adjustWeights(weightsHiddenOutput, biasOutput, hiddenLayer, outputError, learningRate);
-            adjustWeights(weightsInputHidden, biasHidden, input, hiddenError, learningRate);
-
-            totalError += outputError.reduce((sum, err) => sum + Math.pow(err, 2), 0);
-        }
-
-        console.log(`Época ${epoch + 1}, Erro Total: ${totalError.toFixed(4)}`);
-        errorByEpoch.push(totalError);
-        if (totalError < minError) break;
-    }
-
-    const confusionMatrix = validateModel(testData, weightsInputHidden, weightsHiddenOutput, biasHidden, biasOutput, uniqueClasses, activationFunc);
-    const accuracy = calculateAccuracy(confusionMatrix);
-
-    return { confusionMatrix, accuracy, errorByEpoch };
-}
-
-app.post('/train', upload.fields([{ name: 'trainFile' }, { name: 'testFile' }]), async (req, res) => {
+app.post('/treinar', upload.fields([{ name: 'arquivoTreinamento' }, { name: 'arquivoTeste' }]), async (req, res) => {
     try {
-        const trainDataRaw = await parseCSV(req.files['trainFile'][0].path);
-        const testDataRaw = await parseCSV(req.files['testFile'][0].path);
+        const dadosTreinamentoBrutos = await parsearCSV(req.files['arquivoTreinamento'][0].path);
+        const dadosTesteBrutos = await parsearCSV(req.files['arquivoTeste'][0].path);
+        const numNeuroniosOcultos = parseInt(req.body.camadaOculta, 10);
 
-        if (!trainDataRaw.length || !testDataRaw.length) {
+        if (!dadosTreinamentoBrutos.length || !dadosTesteBrutos.length) {
             throw new Error('Os arquivos CSV de treinamento ou teste estão vazios.');
         }
 
-        const trainData = normalizeData(trainDataRaw);
-        const testData = normalizeData(testDataRaw);
+        // Normalizar dados
+        const dadosTreinamento = normalizarDados(dadosTreinamentoBrutos);
+        const dadosTeste = normalizarDados(dadosTesteBrutos);
 
-        const numInputs = Object.keys(trainData[0]).slice(0, -1).length;
-        const uniqueClasses = [...new Set(trainData.map(row => row.classe))];
-        const numOutputs = uniqueClasses.length;
+        // Determinar números de entradas e saídas
+        const numEntradas = Object.keys(dadosTreinamento[0]).slice(0, -1).length;
+        const classesUnicas = [...new Set(dadosTreinamento.map(linha => linha.classe))];
+        const numSaidas = classesUnicas.length;
 
-        const hiddenLayerSize = parseInt(req.body.hiddenLayerSize) || 
-        Math.ceil((numInputs + numOutputs) / 2);
+        // Inicializar pesos e bias
+        const pesosEntradaOculta = inicializarMatriz(numEntradas, numNeuroniosOcultos);
+        const pesosOcultaSaida = inicializarMatriz(numNeuroniosOcultos, numSaidas);
+        const biasOculta = new Array(numNeuroniosOcultos).fill(0);
+        const biasSaida = new Array(numSaidas).fill(0);
 
-        const { confusionMatrix, accuracy, errorByEpoch } = trainAndTestModel(trainData, testData, {
-            numInputs,
-            numOutputs,
-            hiddenLayerSize,
-            learningRate: parseFloat(req.body.learningRate),
-            epochs: parseInt(req.body.epochs, 10),
-            activation: req.body.activation,
-            minError: parseFloat(req.body.minError || 0.01),
+        // Configurar função de ativação
+        const funcaoAtivacao = obterFuncaoAtivacao(req.body.funcaoAtivacao);
+        const errosPorEpoca = [];
+
+        // Treinamento
+        for (let epoca = 0; epoca < req.body.epocas; epoca++) {
+            let erroTotal = 0;
+
+            for (let i = 0; i < dadosTreinamento.length; i++) {
+                const entrada = Object.values(dadosTreinamento[i]).slice(0, -1).map(Number);
+                const esperado = classesUnicas.map(cls => (cls === dadosTreinamento[i].classe ? 1 : 0));
+
+                const camadaOculta = ativarCamada(entrada, pesosEntradaOculta, biasOculta, funcaoAtivacao);
+                const camadaSaida = ativarCamada(camadaOculta, pesosOcultaSaida, biasSaida, funcaoAtivacao);
+
+                const erroSaida = esperado.map((t, idx) => t - camadaSaida[idx]);
+                const erroOculto = calcularErroOculto(erroSaida, pesosOcultaSaida, camadaOculta, funcaoAtivacao);
+
+                ajustarPesos(pesosOcultaSaida, biasSaida, camadaOculta, erroSaida, req.body.taxaAprendizado);
+                ajustarPesos(pesosEntradaOculta, biasOculta, entrada, erroOculto, req.body.taxaAprendizado);
+
+                erroTotal += erroSaida.reduce((soma, erro) => soma + Math.pow(erro, 2), 0);
+            }
+
+            console.log(`Época ${epoca + 1}, Erro Total: ${erroTotal.toFixed(4)}`);
+            errosPorEpoca.push(erroTotal);
+            if (erroTotal < req.body.erroMinimo) break;
+        }
+
+        // Validar modelo
+        const matrizConfusao = validarModelo(dadosTeste, pesosEntradaOculta, pesosOcultaSaida, biasOculta, biasSaida, classesUnicas, funcaoAtivacao);
+        const acuracia = calcularAcuracia(matrizConfusao);
+
+        // Enviar todos os dados ao frontend
+        res.json({
+            numEntradas,
+            numSaidas,
+            matrizConfusao,
+            acuracia,
+            errosPorEpoca
         });
-
-        res.json({ confusionMatrix, accuracy, errorByEpoch });
-    } catch (error) {
-        console.error('Erro no treinamento:', error);
-        res.status(500).json({ error: error.message });
+    } catch (erro) {
+        console.error(erro);
+        res.status(500).json({ erro: erro.message });
     }
 });
 
-app.listen(3000, () => console.log('Servidor rodando em http://localhost:3000'));
+app.listen(3000, () => {
+    console.log('Servidor rodando na porta 3000.');
+});
