@@ -77,7 +77,7 @@ function calculateAccuracy(confusionMatrix) {
     return ((correct / total) * 100).toFixed(2);
 }
 
-// Outras funções (normalizeData, initializeMatrix, etc.)
+// Outras funções auxiliares
 function parseCSV(filePath) {
     return new Promise((resolve, reject) => {
         const data = [];
@@ -116,8 +116,8 @@ function initializeMatrix(rows, cols) {
 function getActivationFunction(type) {
     if (type === 'linear') {
         return {
-            func: x => x,
-            derivative: () => 1,
+            func: x => x / 10,
+            derivative: () => 1 / 10,
         };
     } else if (type === 'logistic') {
         return {
@@ -133,14 +133,19 @@ function getActivationFunction(type) {
     throw new Error('Função de ativação inválida');
 }
 
-// Função para codificar classes em formato one-hot
-function oneHotEncode(value, classes) {
-    return classes.map(cls => (cls === value ? 1 : 0));
+function calculateHiddenNeurons(inputSize, outputSize, method = 'arithmetic') {
+    if (method === 'arithmetic') {
+        return Math.ceil((inputSize + outputSize) / 2);
+    } else if (method === 'geometric') {
+        return Math.ceil(Math.sqrt(inputSize * outputSize));
+    }
+    throw new Error('Método inválido para cálculo de neurônios ocultos');
 }
 
-// Função de treinamento e teste do modelo
 function trainAndTestModel(trainData, testData, params) {
-    const { numInputs, numOutputs, hiddenLayerSize, learningRate, epochs, activation } = params;
+    const {
+        numInputs, numOutputs, hiddenLayerSize, learningRate, epochs, activation, minError,
+    } = params;
 
     const inputs = trainData.map(row => Object.values(row).slice(0, -1).map(Number));
     const outputs = trainData.map(row => row.classe);
@@ -152,7 +157,6 @@ function trainAndTestModel(trainData, testData, params) {
     const biasOutput = new Array(numOutputs).fill(0);
 
     const activationFunc = getActivationFunction(activation);
-
     const errorByEpoch = [];
 
     for (let epoch = 0; epoch < epochs; epoch++) {
@@ -160,7 +164,7 @@ function trainAndTestModel(trainData, testData, params) {
 
         for (let i = 0; i < inputs.length; i++) {
             const input = inputs[i];
-            const target = oneHotEncode(outputs[i], uniqueClasses);
+            const target = uniqueClasses.map(cls => (cls === outputs[i] ? 1 : 0));
 
             const hiddenLayer = activateLayer(input, weightsInputHidden, biasHidden, activationFunc);
             const outputLayer = activateLayer(hiddenLayer, weightsHiddenOutput, biasOutput, activationFunc);
@@ -176,7 +180,7 @@ function trainAndTestModel(trainData, testData, params) {
 
         console.log(`Época ${epoch + 1}, Erro Total: ${totalError.toFixed(4)}`);
         errorByEpoch.push(totalError);
-        if (totalError < 0.01) break;
+        if (totalError < minError) break;
     }
 
     const confusionMatrix = validateModel(testData, weightsInputHidden, weightsHiddenOutput, biasHidden, biasOutput, uniqueClasses, activationFunc);
@@ -201,19 +205,17 @@ app.post('/train', upload.fields([{ name: 'trainFile' }, { name: 'testFile' }]),
         const uniqueClasses = [...new Set(trainData.map(row => row.classe))];
         const numOutputs = uniqueClasses.length;
 
-        if (!numInputs || !numOutputs) {
-            throw new Error('Não foi possível determinar o número de entradas ou saídas.');
-        }
-
-        const hiddenLayerSize = parseInt(req.body.hiddenLayerSize) || Math.round(Math.sqrt(numInputs * numOutputs));
+        const hiddenLayerSize = parseInt(req.body.hiddenLayerSize) || 
+        Math.ceil((numInputs + numOutputs) / 2);
 
         const { confusionMatrix, accuracy, errorByEpoch } = trainAndTestModel(trainData, testData, {
             numInputs,
             numOutputs,
             hiddenLayerSize,
             learningRate: parseFloat(req.body.learningRate),
-            epochs: parseInt(req.body.epochs),
+            epochs: parseInt(req.body.epochs, 10),
             activation: req.body.activation,
+            minError: parseFloat(req.body.minError || 0.01),
         });
 
         res.json({ confusionMatrix, accuracy, errorByEpoch });
